@@ -41,14 +41,15 @@ Only projects that have a `package-lock.json` are touched, so yarn and existing 
 ## Usage
 
 ```bash
-./migrate-to-pnpm.sh [DIR] [--dry-run]
+./migrate-to-pnpm.sh [DIR] [--dry-run] [--log FILE]
 ```
 
-| Argument    | Description                                            |
-| ----------- | ------------------------------------------------------ |
-| `DIR`       | Root folder to search. Defaults to the current directory. |
-| `--dry-run` | List the projects that would be migrated, but change nothing. |
-| `-h`, `--help` | Print usage help.                                   |
+| Argument      | Description                                            |
+| ------------- | ----------------------------------------------------- |
+| `DIR`         | Root folder to search. Defaults to the current directory. |
+| `--dry-run`   | List the projects that would be migrated, but change nothing. |
+| `--log FILE`  | Write the run log to `FILE`. Defaults to `./migrate-to-pnpm-<timestamp>.log`. |
+| `-h`, `--help`| Print usage help.                                     |
 
 ### Examples
 
@@ -59,23 +60,66 @@ Only projects that have a `package-lock.json` are touched, so yarn and existing 
 # Migrate everything under ~/Documents/project
 ./migrate-to-pnpm.sh ~/Documents/project
 
+# Migrate and write the log to a specific file
+./migrate-to-pnpm.sh ~/Documents/project --log ~/pnpm-migration.log
+
 # Search the current directory
 ./migrate-to-pnpm.sh
 ```
 
-## Output
+## Logging & results report
 
-The script prints progress per project and ends with a summary:
+Every run is timestamped and streamed to **both the console and a log file** (`tee`).
+The log file path is printed at the start and end of the run, so you can review it
+later or share it. By default it's written to `./migrate-to-pnpm-<timestamp>.log`;
+override it with `--log FILE`.
+
+The run has two phases:
+
+1. **Search** — logs each npm project as it's discovered (lockfiles inside
+   `node_modules` are skipped), then prints the total count.
+2. **Migrate** — logs each project as `[N/total]` with its outcome and how long it took.
+   The full `pnpm import` / `pnpm install` output is captured in the log too.
+
+It ends with a **results report** summarizing the whole run:
 
 ```
-==> Migrating ./apps/web
-    ok: ./apps/web
+14:22:01  ==================== migrate-to-pnpm ====================
+14:22:01  Root:     /Users/you/Documents/project
+14:22:01  Mode:     migrate + reinstall
+14:22:01  Log file: ./migrate-to-pnpm-20260601-142201.log
+14:22:01  Started:  2026-06-01 14:22:01
 
-----------------------------------------
-Done. Migrated: 3   Failed: 0
+14:22:01  Searching for package-lock.json (excluding node_modules)...
+14:22:01    found: /Users/you/Documents/project/apps/web
+14:22:01    found: /Users/you/Documents/project/tools/cli
+
+14:22:01  Discovered 2 npm project(s).
+
+14:22:01  [1/2] ==> Migrating /Users/you/Documents/project/apps/web
+14:22:09  [1/2] ok (8s): /Users/you/Documents/project/apps/web
+14:22:09  [2/2] ==> Migrating /Users/you/Documents/project/tools/cli
+14:22:14  [2/2] ok (5s): /Users/you/Documents/project/tools/cli
+
+14:22:14  ======================== RESULTS ========================
+14:22:14  Root:            /Users/you/Documents/project
+14:22:14  Started:         2026-06-01 14:22:01
+14:22:14  Finished:        2026-06-01 14:22:14
+14:22:14  Duration:        13s
+14:22:14  Projects found:  2
+14:22:14  Migrated (ok):   2
+14:22:14  Failed:          0
+
+14:22:14  Succeeded:
+14:22:14    [ok]      /Users/you/Documents/project/apps/web
+14:22:14    [ok]      /Users/you/Documents/project/tools/cli
+14:22:14  =========================================================
+14:22:14  Full log saved to: ./migrate-to-pnpm-20260601-142201.log
 ```
 
-If any project fails, it is listed at the end and the script exits with status `1`. Other projects are unaffected — one failure does not abort the whole run.
+If any project fails, it is listed under a `Failed:` section in the report and the
+script exits with status `1`. Other projects are unaffected — one failure does not
+abort the whole run.
 
 ## Safety notes
 
