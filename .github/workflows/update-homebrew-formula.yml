@@ -1,0 +1,62 @@
+name: Update Homebrew formula
+
+# Runs when you push a version tag (e.g. v1.2.0). It computes the sha256 of the
+# release tarball and updates url + sha256 in the Homebrew tap repo.
+on:
+  push:
+    tags:
+      - "v*"
+  # Allow re-running manually for a specific tag from the Actions tab.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. v1.2.0)"
+        required: true
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve tag
+        id: meta
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          URL="https://github.com/${{ github.repository }}/archive/refs/tags/${TAG}.tar.gz"
+          echo "tag=$TAG"   >> "$GITHUB_OUTPUT"
+          echo "url=$URL"   >> "$GITHUB_OUTPUT"
+
+      - name: Compute tarball sha256
+        id: sha
+        run: |
+          SHA=$(curl -fsSL "${{ steps.meta.outputs.url }}" | sha256sum | awk '{print $1}')
+          echo "Computed sha256: $SHA"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout tap repo
+        uses: actions/checkout@v4
+        with:
+          repository: tisohjung/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+
+      - name: Update formula
+        run: |
+          FILE="tap/Formula/migrate-to-pnpm.rb"
+          sed -i -E \
+            -e 's|^  url ".*"|  url "${{ steps.meta.outputs.url }}"|' \
+            -e 's|^  sha256 ".*"|  sha256 "${{ steps.sha.outputs.sha }}"|' \
+            "$FILE"
+          echo "----- updated formula -----"
+          cat "$FILE"
+
+      - name: Commit and push
+        run: |
+          cd tap
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "Formula already up to date — nothing to commit."
+            exit 0
+          fi
+          git commit -am "Update migrate-to-pnpm to ${{ steps.meta.outputs.tag }}"
+          git push
