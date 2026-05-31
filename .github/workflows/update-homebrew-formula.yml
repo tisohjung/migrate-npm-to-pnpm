@@ -33,7 +33,7 @@ jobs:
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Checkout tap repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: tisohjung/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
