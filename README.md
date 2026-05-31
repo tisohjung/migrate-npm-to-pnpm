@@ -44,12 +44,13 @@ Only projects that have a `package-lock.json` are touched, so yarn and existing 
 ./migrate-to-pnpm.sh [DIR] [--dry-run] [--log FILE]
 ```
 
-| Argument      | Description                                            |
-| ------------- | ----------------------------------------------------- |
-| `DIR`         | Root folder to search. Defaults to the current directory. |
-| `--dry-run`   | List the projects that would be migrated, but change nothing. |
-| `--log FILE`  | Write the run log to `FILE`. Defaults to `./migrate-to-pnpm-<timestamp>.log`. |
-| `-h`, `--help`| Print usage help.                                     |
+| Argument         | Description                                            |
+| ---------------- | ----------------------------------------------------- |
+| `DIR`            | Root folder to search. Defaults to the current directory. |
+| `--dry-run`      | List the projects that would be migrated, but change nothing. |
+| `--log FILE`     | Write the run log to `FILE`. Defaults to `./migrate-to-pnpm-<timestamp>.log`. |
+| `-v`, `--version`| Print the version and exit.                           |
+| `-h`, `--help`   | Print usage help.                                     |
 
 ### Examples
 

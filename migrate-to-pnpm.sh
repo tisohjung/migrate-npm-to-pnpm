@@ -11,8 +11,11 @@
 #   DIR          Root folder to search (default: current directory)
 #   --dry-run    List the projects that would be migrated, but change nothing
 #   --log FILE   Write the run log to FILE (default: ./migrate-to-pnpm-<timestamp>.log)
+#   --version    Print the version and exit
 #
 set -uo pipefail
+
+VERSION="1.2.0"
 
 ROOT="."
 DRY_RUN=0
@@ -26,6 +29,10 @@ while [ $# -gt 0 ]; do
       shift
       LOG_FILE="${1:-}"
       [ -z "$LOG_FILE" ] && { echo "error: --log needs a file path" >&2; exit 1; }
+      ;;
+    -v|--version)
+      echo "migrate-to-pnpm $VERSION"
+      exit 0
       ;;
     -h|--help)
       grep '^#' "$0" | sed 's/^# \{0,1\}//'
