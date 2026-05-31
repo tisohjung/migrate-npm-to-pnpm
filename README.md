@@ -134,3 +134,53 @@ abort the whole run.
 - Uses `find -print0` with `read -d ''` so paths containing spaces are handled correctly.
 - Runs each migration in a subshell so a failure in one project doesn't stop the others.
 - Checks that the target directory exists and that `pnpm` is installed before doing anything.
+
+## Releasing
+
+This tool is distributed through the Homebrew tap
+[`tisohjung/homebrew-tap`](https://github.com/tisohjung/homebrew-tap), and the
+tap's formula (`Formula/migrate-to-pnpm.rb`) is the single source of truth for
+the published `url` + `sha256`.
+
+Cutting a release is a single step — push a version tag:
+
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+The [`update-homebrew-formula`](.github/workflows/update-homebrew-formula.yml)
+GitHub Actions workflow then runs automatically and:
+
+1. Downloads the release source tarball and computes its `sha256`.
+2. Checks out the tap repo.
+3. Updates `url` + `sha256` in the formula.
+4. Commits and pushes to the tap — but only if something actually changed.
+
+Users then pick up the new version with:
+
+```bash
+brew upgrade migrate-to-pnpm
+```
+
+### One-time setup
+
+The workflow pushes to a **different** repository (the tap), which the default
+`GITHUB_TOKEN` cannot do. It needs a fine-grained Personal Access Token:
+
+- **Scope:** repository `tisohjung/homebrew-tap`, **Contents: Read and write**.
+- Stored on this repo as the secret **`HOMEBREW_TAP_TOKEN`**
+  (`gh secret set HOMEBREW_TAP_TOKEN --repo tisohjung/migrate-npm-to-pnpm`).
+
+### Testing the workflow
+
+Re-run it against an existing tag from the Actions tab, or via the CLI:
+
+```bash
+gh workflow run "Update Homebrew formula" \
+  --repo tisohjung/migrate-npm-to-pnpm -f tag=v1.1.0
+```
+
+For an unchanged tag it reports *"Formula already up to date — nothing to
+commit"* and makes no commit, which confirms the pipeline works without
+publishing anything.
